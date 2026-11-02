@@ -1,0 +1,143 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: ${{ matrix.os }} / ${{ matrix.arch }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-24.04
+            arch: x86_64
+            compilers: gcc clang
+          - os: ubuntu-24.04-arm
+            arch: arm64
+            compilers: gcc clang
+          - os: macos-15
+            arch: arm64
+            compilers: clang
+          - os: windows-2025
+            arch: x86_64
+            compilers: msvc clang-cl
+    defaults:
+      run:
+        shell: bash
+    env:
+      PYTHONUTF8: '1'
+      NATIVE_COMPILERS: ${{ matrix.compilers }}
+    steps:
+      - name: Preserve line endings on Windows
+        if: runner.os == 'Windows'
+        run: git config --global core.autocrlf false
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+      - name: Check out Goose
+        uses: actions/checkout@v4
+        with:
+          repository: aardappel/goose
+          # Compiler revision with package c_headers support.
+          ref: b46099024b9af8a9f54cd76e24953a89c21ccb3a
+          path: .ci/goose
+          persist-credentials: false
+      - name: Check out goosdoc
+        uses: actions/checkout@v4
+        with:
+          repository: sstadick/goosdoc
+          ref: fb1c32532a913d1309eda9aa6709e3495ae6e133 # v0.2.0
+          path: .ci/goosdoc
+          persist-credentials: false
+      - name: Build Goose
+        run: |
+          cmake -S .ci/goose -B .ci/goose/build -DCMAKE_BUILD_TYPE=Debug -DGOOSE_BUILTIN_LIBS=
+          cmake --build .ci/goose/build --config Debug --parallel 2
+      - name: Set test environment and check architecture
+        shell: python
+        env:
+          EXPECTED_ARCH: ${{ matrix.arch }}
+        run: |
+          import os
+          from pathlib import Path
+          import platform
+
+          machine = platform.machine().lower()
+          arch = {'amd64': 'x86_64', 'aarch64': 'arm64'}.get(machine, machine)
+          assert arch == os.environ['EXPECTED_ARCH'], (machine, os.environ['EXPECTED_ARCH'])
+          print(f'Testing {platform.system()} on {arch}')
+          build = Path(os.environ['GITHUB_WORKSPACE']) / '.ci/goose/build'
+          if os.name == 'nt':
+              build /= 'Debug'
+          with open(os.environ['GITHUB_PATH'], 'a', encoding='utf-8') as out:
+              out.write(str(build) + '\n')
+          with open(os.environ['GITHUB_ENV'], 'a', encoding='utf-8') as out:
+              out.write('GOOSE_HOME=' + str(Path(os.environ['RUNNER_TEMP']) / 'goosio-home') + '\n')
+      - name: Check API reference
+        env:
+          GOOSDOC: .ci/goosdoc/main.goose
+        run: scripts/docs.sh --check
+      - name: Run documentation examples
+        env:
+          GOOSDOC: .ci/goosdoc/main.goose
+        run: |
+          scripts/doctest.sh
+          read -ra compilers <<< "$NATIVE_COMPILERS"
+          for cc in "${compilers[@]}"; do
+            scripts/doctest.sh --cc "$cc"
+          done
+      - name: TinyCC and native tests
+        run: |
+          read -ra compilers <<< "$NATIVE_COMPILERS"
+          python3 tests/run.py --cc "${compilers[@]}"
+      - name: Generate release reference
+        if: matrix.os == 'ubuntu-24.04'
+        env:
+          GOOSDOC: .ci/goosdoc/main.goose
+          DOC_OUTPUT: ${{ runner.temp }}/API.md
+        run: scripts/docs.sh --source-url "https://github.com/$GITHUB_REPOSITORY/blob/$GITHUB_SHA"
+      - uses: actions/upload-artifact@v4
+        if: matrix.os == 'ubuntu-24.04'
+        with:
+          name: api-reference
+          path: ${{ runner.temp }}/API.md
+          if-no-files-found: error
+
+  release:
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+    needs: test
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: api-reference
+          path: docs
+      - name: Publish source release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          [[ "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo "Expected vMAJOR.MINOR.PATCH"; exit 1; }
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release upload "$TAG" docs/API.md --clobber
+          else
+            gh release create "$TAG" docs/API.md --verify-tag --generate-notes
+          fi

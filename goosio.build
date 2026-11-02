@@ -1,0 +1,3 @@
+c_headers = ["include/goosio.h"];
+c_sources = ["src/goosio.c"];
+exclude = ["tests", ".amp", ".ci"];
