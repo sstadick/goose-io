@@ -1,9 +1,9 @@
-# goosio
+# goose-io
 
 Synchronous file I/O for [Goose](https://github.com/aardappel/goose): raw file
 handles, buffered readers and writers, and borrowed line reads.
 
-**[API reference and examples](API.md)** · [CI](https://github.com/sstadick/goosio/actions/workflows/ci.yml)
+**[API reference and examples](API.md)** · [CI](https://github.com/sstadick/goose-io/actions/workflows/ci.yml)
 
 ## Get started
 
@@ -12,27 +12,27 @@ This example creates or overwrites `hello.txt` in the current directory:
 
 ```goose
 import std;
-import goosio from "github.com/sstadick/goosio@main";
-import goostr from "github.com/sstadick/goostr@bdf6eb74faddca0ef62092c2034589f4dd11fab1";
-import goosimd from "github.com/sstadick/goosimd@main";
+import io from "github.com/sstadick/goose-io@main";
+import bstr from "github.com/sstadick/goose-bstr@216c80429b1d9df6ffbd73eaf32b70c1a8e074bf";
+import simd_bytes from "github.com/sstadick/goose-simd@e11e34447d9b0f23f2fd0f63bc25f4aee838f175";
 
 fn main() {
-    let output, created = goosio::open_write("hello.txt");
+    let output, created = io::open_write("hello.txt");
     assert(created);
-    let writer = goosio::buffered_writer(output);
-    assert(goosio::write(writer, "hello\nworld\n") == 12);
-    assert(goosio::close(writer)); // Flushes, then closes the file.
+    let writer = io::buffered_writer(output);
+    assert(io::write(writer, "hello\nworld\n") == 12);
+    assert(io::close(writer)); // Flushes, then closes the file.
 
-    let input, opened = goosio::open_read("hello.txt");
+    let input, opened = io::open_read("hello.txt");
     assert(opened);
-    let reader = goosio::buffered_reader(input);
+    let reader = io::buffered_reader(input);
     loop {
-        let line, status = goosio::read_line(reader);
-        if status == goosio::LineStatus.Eof { break; }
-        assert(status == goosio::LineStatus.Line);
+        let line, status = io::read_line(reader);
+        if status == io::LineStatus.Eof { break; }
+        assert(status == io::LineStatus.Line);
         print(line); // Use the borrowed bytes before the next reader operation.
     }
-    assert(goosio::close(reader));
+    assert(io::close(reader));
 }
 ```
 
@@ -47,7 +47,7 @@ the v2026.3 release is too old. No `--include` flag or separate library build
 is needed. The import follows `main`; use a full commit SHA instead for a
 reproducible dependency. The API is early and may change.
 
-Line searches use goostr, which uses goosimd. Declare both dependencies in
+Line searches use goose-bstr, which uses goose-simd. Declare both dependencies in
 the program's root file as above; Goose requires root-level package declarations.
 
 ## Borrow lines without allocating a string per line
@@ -69,8 +69,8 @@ on that reader.** Do not store it for later use without copying it:
 
 ```goose
 // Inside main(), with an open reader:
-let line, status = goosio::read_line(reader);
-assert(status == goosio::LineStatus.Line);
+let line, status = io::read_line(reader);
+assert(status == io::LineStatus.Line);
 var saved: u8[>..] = [];
 saved.append(line); // Own these bytes before reading again.
 ```
@@ -124,9 +124,9 @@ Do not access the wrapper's file separately or modify its internal fields.
 Closing an already closed handle or wrapper succeeds.
 
 There is no seeking, append mode, asynchronous I/O, or automatic close.
-For whole-file reads/writes, Goose's `os` module may be enough; goosio is for
+For whole-file reads/writes, Goose's `os` module may be enough; goose-io is for
 incremental I/O. For byte-string processing, see
-[goostr](https://github.com/sstadick/goostr).
+[goose-bstr](https://github.com/sstadick/goose-bstr).
 
 ## Contributing
 
@@ -152,12 +152,15 @@ The benchmark uses warm-cache file reads, an 8192-byte buffer, seven alternating
 rounds, and matching optimized builds. It checks line counts and checksums on
 empty, short, long, CRLF, and binary lines. `--output results.json` saves raw
 timings; `--baseline` should name the pre-change revision after committing.
+Pre-migration baselines retain their `goosio`/`goostr` imports and use the
+pre-migration SIMD commit `983f3bb2bfee95affd09f4f5530be249d7d6040b`;
+the runner does not import new module names from old revisions.
 Search setup can cost more than a scalar scan for very short nonempty lines;
 the benchmark includes one-byte payloads so that tradeoff stays visible.
 
 Edit API documentation in source comments, not `API.md`. With
-[goosdoc v0.2.0](https://github.com/sstadick/goosdoc/releases/tag/v0.2.0)
-checked out at `../goosdoc`:
+[goose-doc](https://github.com/sstadick/goose-doc/commit/f7292c9ee395596fa39eb709f90dc71ef124a0eb)
+checked out at `../goose-doc`:
 
 ```sh
 scripts/docs.sh
@@ -167,7 +170,7 @@ scripts/doctest.sh --cc gcc
 scripts/doctest.sh --cc clang
 ```
 
-Set `GOOSDOC=/path/to/goosdoc/main.goose` for another location. Each supported
+Set `GOOSE_DOC=/path/to/goose-doc/main.goose` for another location. Each supported
 declaration and overload needs an executable example. The
 [example preamble](tests/doc_preamble.goose) supplies `std`, `os`, the local
 package import, and `doc_path`, a disposable filename. Run doctests serially
@@ -177,6 +180,27 @@ CI runs TinyCC, native builds, docs checks, and examples on Linux x86-64/ARM64
 (GCC and Clang), macOS ARM64 (Clang), and Windows x86-64 (MSVC and clang-cl).
 Pushing a `vMAJOR.MINOR.PATCH` tag publishes a source release only after the
 entire matrix passes, attaching an API reference with commit-pinned links.
+
+## Migration from goosio
+
+The repository is now [sstadick/goose-io](https://github.com/sstadick/goose-io).
+Replace `import goosio from "github.com/sstadick/goosio@<ref>";` with
+`import io from "github.com/sstadick/goose-io@<migration-or-later-ref>";`
+and change `goosio::` to `io::`. The entry file is `io.goose`.
+Function and type names are unchanged; owned-struct UFCS remains supported.
+Old release tags retain the old entry file and namespace, so do not use the
+new import identifier with a pre-migration revision. No compatibility wrapper
+is provided.
+
+Dependencies below are exact coordinated migration commits. Until they are
+merged/published, remote builds require those commits to be made available
+(or local package source overrides). Existing release tags do not contain
+the new namespaces. The documentation scripts use `GOOSE_DOC`, defaulting
+to `../goose-doc/main.goose`.
+
+- `goose-doc`: `f7292c9ee395596fa39eb709f90dc71ef124a0eb`
+- `goose-simd`: `e11e34447d9b0f23f2fd0f63bc25f4aee838f175`
+- `goose-bstr`: `216c80429b1d9df6ffbd73eaf32b70c1a8e074bf`
 
 ## License
 
