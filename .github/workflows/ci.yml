@@ -56,12 +56,12 @@ jobs:
           ref: b46099024b9af8a9f54cd76e24953a89c21ccb3a
           path: .ci/goose
           persist-credentials: false
-      - name: Check out goosdoc
+      - name: Check out goose-doc
         uses: actions/checkout@v7
         with:
-          repository: sstadick/goosdoc
-          ref: fb1c32532a913d1309eda9aa6709e3495ae6e133 # v0.2.0
-          path: .ci/goosdoc
+          repository: sstadick/goose-doc
+          ref: f7292c9ee395596fa39eb709f90dc71ef124a0eb # namespace migration
+          path: .ci/goose-doc
           persist-credentials: false
       - name: Build Goose
         run: |
@@ -86,14 +86,14 @@ jobs:
           with open(os.environ['GITHUB_PATH'], 'a', encoding='utf-8') as out:
               out.write(str(build) + '\n')
           with open(os.environ['GITHUB_ENV'], 'a', encoding='utf-8') as out:
-              out.write('GOOSE_HOME=' + str(Path(os.environ['RUNNER_TEMP']) / 'goosio-home') + '\n')
+              out.write('GOOSE_HOME=' + str(Path(os.environ['RUNNER_TEMP']) / 'goose-io-home') + '\n')
       - name: Check API reference
         env:
-          GOOSDOC: .ci/goosdoc/main.goose
+          GOOSE_DOC: .ci/goose-doc/main.goose
         run: scripts/docs.sh --check
       - name: Run documentation examples
         env:
-          GOOSDOC: .ci/goosdoc/main.goose
+          GOOSE_DOC: .ci/goose-doc/main.goose
         run: |
           scripts/doctest.sh
           read -ra compilers <<< "$NATIVE_COMPILERS"
@@ -107,7 +107,7 @@ jobs:
       - name: Generate release reference
         if: matrix.os == 'ubuntu-24.04'
         env:
-          GOOSDOC: .ci/goosdoc/main.goose
+          GOOSE_DOC: .ci/goose-doc/main.goose
           DOC_OUTPUT: ${{ runner.temp }}/API.md
         run: scripts/docs.sh --source-url "https://github.com/$GITHUB_REPOSITORY/blob/$GITHUB_SHA"
       - uses: actions/upload-artifact@v7

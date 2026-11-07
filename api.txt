@@ -1,14 +1,14 @@
 # Supported API; raw native adapters are implementation details.
-goosio::FileHandle
-goosio::open_read
-goosio::open_write
-goosio::read
-goosio::write
-goosio::close
-goosio::BufferedReader
-goosio::buffered_reader
-goosio::LineStatus
-goosio::read_line
-goosio::BufferedWriter
-goosio::buffered_writer
-goosio::flush
+io::FileHandle
+io::open_read
+io::open_write
+io::read
+io::write
+io::close
+io::BufferedReader
+io::buffered_reader
+io::LineStatus
+io::read_line
+io::BufferedWriter
+io::buffered_writer
+io::flush

@@ -7,19 +7,19 @@
 // FileHandle values own their descriptor by convention. Do not copy them, and
 // close each successfully opened handle when it is no longer needed.
 
-namespace goosio;
+namespace io;
 
 import std;
-import goostr from "github.com/sstadick/goostr@bdf6eb74faddca0ef62092c2034589f4dd11fab1";
+import bstr from "github.com/sstadick/goose-bstr@216c80429b1d9df6ffbd73eaf32b70c1a8e074bf";
 
 // An owned file descriptor. Obtain it from open_read/open_write, check their
 // bool result, and close it explicitly. Do not copy a live handle or construct
 // one from an arbitrary fd; a default-initialized handle is not a closed handle.
 //
 // ```goose
-// let file, ok = goosio::open_read("");
+// let file, ok = io::open_read("");
 // assert(!ok);
-// assert(goosio::close(file)); // A failed open is safe to close.
+// assert(io::close(file)); // A failed open is safe to close.
 // ```
 struct FileHandle { fd: i32 }
 
@@ -34,9 +34,9 @@ extern fn close_raw(fd: i32) -> i32 = "goosio_close";
 //
 // ```goose
 // assert(write_file(doc_path, "hello"));
-// let file, ok = goosio::open_read(doc_path);
+// let file, ok = io::open_read(doc_path);
 // assert(ok);
-// assert(goosio::close(file));
+// assert(io::close(file));
 // assert(delete_file(doc_path));
 // ```
 inline fn open_read(path: const u8[:]) -> FileHandle, bool {
@@ -49,10 +49,10 @@ inline fn open_read(path: const u8[:]) -> FileHandle, bool {
 // files use mode 0666 modified by the process umask. Path rules match open_read.
 //
 // ```goose
-// let file, ok = goosio::open_write(doc_path);
+// let file, ok = io::open_write(doc_path);
 // assert(ok);
-// assert(goosio::write(file, "hello") == 5);
-// assert(goosio::close(file));
+// assert(io::write(file, "hello") == 5);
+// assert(io::close(file));
 // assert(delete_file(doc_path));
 // ```
 inline fn open_write(path: const u8[:]) -> FileHandle, bool {
@@ -66,13 +66,13 @@ inline fn open_write(path: const u8[:]) -> FileHandle, bool {
 //
 // ```goose
 // assert(write_file(doc_path, "abc"));
-// let file, ok = goosio::open_read(doc_path);
+// let file, ok = io::open_read(doc_path);
 // assert(ok);
 // var bytes: u8[8] = [0; 8];
-// assert(goosio::read(file, bytes) == 3);
+// assert(io::read(file, bytes) == 3);
 // assert(bytes[..3] == "abc");
-// assert(goosio::read(file, bytes) == 0);
-// assert(goosio::close(file));
+// assert(io::read(file, bytes) == 0);
+// assert(io::close(file));
 // assert(delete_file(doc_path));
 // ```
 inline fn read(file: const FileHandle&, buffer: u8[:]) -> i64 {
@@ -85,10 +85,10 @@ inline fn read(file: const FileHandle&, buffer: u8[:]) -> i64 {
 // suffix. An empty write to an open handle returns 0. No newline translation.
 //
 // ```goose
-// let file, ok = goosio::open_write(doc_path);
+// let file, ok = io::open_write(doc_path);
 // assert(ok);
-// assert(goosio::write(file, "a\0b\r\n") == 5);
-// assert(goosio::close(file));
+// assert(io::write(file, "a\0b\r\n") == 5);
+// assert(io::close(file));
 // var bytes: u8[>..] = [];
 // assert(read_file(doc_path, bytes));
 // assert(bytes == "a\0b\r\n");
@@ -104,11 +104,11 @@ inline fn write(file: const FileHandle&, buffer: const u8[:]) -> i64 {
 // descriptor. This is not a durability guarantee (there is no fsync here).
 //
 // ```goose
-// let file, ok = goosio::open_write(doc_path);
+// let file, ok = io::open_write(doc_path);
 // assert(ok);
-// assert(goosio::close(file));
-// assert(goosio::close(file));
-// assert(goosio::write(file, "x") == -1);
+// assert(io::close(file));
+// assert(io::close(file));
+// assert(io::write(file, "x") == -1);
 // assert(delete_file(doc_path));
 // ```
 inline fn close(file: FileHandle&) -> bool {
@@ -124,12 +124,12 @@ inline fn close(file: FileHandle&) -> bool {
 //
 // ```goose
 // assert(write_file(doc_path, "first\nsecond\n"));
-// let file, ok = goosio::open_read(doc_path);
+// let file, ok = io::open_read(doc_path);
 // assert(ok);
-// let reader = goosio::buffered_reader(file);
-// let line, status = goosio::read_line(reader);
-// assert(status == goosio::LineStatus.Line && line == "first");
-// assert(goosio::close(reader));
+// let reader = io::buffered_reader(file);
+// let line, status = io::read_line(reader);
+// assert(status == io::LineStatus.Line && line == "first");
+// assert(io::close(reader));
 // assert(delete_file(doc_path));
 // ```
 struct BufferedReader {
@@ -146,13 +146,13 @@ struct BufferedReader {
 //
 // ```goose
 // assert(write_file(doc_path, "abc"));
-// let file, ok = goosio::open_read(doc_path);
+// let file, ok = io::open_read(doc_path);
 // assert(ok);
-// let reader = goosio::buffered_reader(file, 2);
-// assert(goosio::close(file)); // Ownership has moved; reader is still open.
-// let line, status = goosio::read_line(reader);
-// assert(status == goosio::LineStatus.Line && line == "abc");
-// assert(goosio::close(reader));
+// let reader = io::buffered_reader(file, 2);
+// assert(io::close(file)); // Ownership has moved; reader is still open.
+// let line, status = io::read_line(reader);
+// assert(status == io::LineStatus.Line && line == "abc");
+// assert(io::close(reader));
 // assert(delete_file(doc_path));
 // ```
 fn buffered_reader(file: FileHandle&, capacity: i64 = 8192) -> BufferedReader {
@@ -170,14 +170,14 @@ fn buffered_reader(file: FileHandle&, capacity: i64 = 8192) -> BufferedReader {
 //
 // ```goose
 // assert(write_file(doc_path, "abc\ndef"));
-// let file, ok = goosio::open_read(doc_path);
+// let file, ok = io::open_read(doc_path);
 // assert(ok);
-// let reader = goosio::buffered_reader(file);
+// let reader = io::buffered_reader(file);
 // var bytes: u8[2] = [0; 2];
-// assert(goosio::read(reader, bytes) == 2 && bytes == "ab");
-// let line, status = goosio::read_line(reader);
-// assert(status == goosio::LineStatus.Line && line == "c");
-// assert(goosio::close(reader));
+// assert(io::read(reader, bytes) == 2 && bytes == "ab");
+// let line, status = io::read_line(reader);
+// assert(status == io::LineStatus.Line && line == "c");
+// assert(io::close(reader));
 // assert(delete_file(doc_path));
 // ```
 fn read(reader: BufferedReader&, buffer: u8[:]) -> i64 {
@@ -201,14 +201,14 @@ fn read(reader: BufferedReader&, buffer: u8[:]) -> i64 {
 //
 // ```goose
 // assert(write_file(doc_path, "\n"));
-// let file, ok = goosio::open_read(doc_path);
+// let file, ok = io::open_read(doc_path);
 // assert(ok);
-// let reader = goosio::buffered_reader(file);
-// let line, status = goosio::read_line(reader);
-// assert(status == goosio::LineStatus.Line && line.len == 0);
-// let end, ended = goosio::read_line(reader);
-// assert(ended == goosio::LineStatus.Eof && end.len == 0);
-// assert(goosio::close(reader));
+// let reader = io::buffered_reader(file);
+// let line, status = io::read_line(reader);
+// assert(status == io::LineStatus.Line && line.len == 0);
+// let end, ended = io::read_line(reader);
+// assert(ended == io::LineStatus.Eof && end.len == 0);
+// assert(io::close(reader));
 // assert(delete_file(doc_path));
 // ```
 enum LineStatus { Line, Eof, Error }
@@ -222,17 +222,17 @@ enum LineStatus { Line, Eof, Error }
 //
 // ```goose
 // assert(write_file(doc_path, "first\r\nsecond"));
-// let file, ok = goosio::open_read(doc_path);
+// let file, ok = io::open_read(doc_path);
 // assert(ok);
-// let reader = goosio::buffered_reader(file, 4);
-// let line, status = goosio::read_line(reader);
-// assert(status == goosio::LineStatus.Line && line == "first");
+// let reader = io::buffered_reader(file, 4);
+// let line, status = io::read_line(reader);
+// assert(status == io::LineStatus.Line && line == "first");
 // var saved: u8[>..] = [];
 // saved.append(line); // Retain a copy before reading again.
-// let next, next_status = goosio::read_line(reader);
-// assert(next_status == goosio::LineStatus.Line && next == "second");
+// let next, next_status = io::read_line(reader);
+// assert(next_status == io::LineStatus.Line && next == "second");
 // assert(saved == "first");
-// assert(goosio::close(reader));
+// assert(io::close(reader));
 // assert(delete_file(doc_path));
 // ```
 fn read_line(reader: BufferedReader&) -> const u8[:], LineStatus {
@@ -245,7 +245,7 @@ fn read_line(reader: BufferedReader&) -> const u8[:], LineStatus {
     }
     var scan = reader.start;
     loop {
-        let offset = goostr::find_byte(reader.buffer[scan..reader.end], '\n');
+        let offset = bstr::find_byte(reader.buffer[scan..reader.end], '\n');
         if offset >= 0 {
             let newline = scan + offset;
             var end = newline;
@@ -279,13 +279,13 @@ fn read_line(reader: BufferedReader&) -> const u8[:], LineStatus {
 // borrowed lines. Closing an already closed reader succeeds.
 //
 // ```goose
-// let file, ok = goosio::open_read("");
+// let file, ok = io::open_read("");
 // assert(!ok);
-// let reader = goosio::buffered_reader(file);
-// assert(goosio::close(reader));
-// assert(goosio::close(reader));
-// let line, status = goosio::read_line(reader);
-// assert(status == goosio::LineStatus.Error);
+// let reader = io::buffered_reader(file);
+// assert(io::close(reader));
+// assert(io::close(reader));
+// let line, status = io::read_line(reader);
+// assert(status == io::LineStatus.Error);
 // ```
 fn close(reader: BufferedReader&) -> bool {
     reader.start = 0;
@@ -298,11 +298,11 @@ fn close(reader: BufferedReader&) -> bool {
 // accepting bytes into memory does not mean the OS has received them.
 //
 // ```goose
-// let file, ok = goosio::open_write(doc_path);
+// let file, ok = io::open_write(doc_path);
 // assert(ok);
-// let writer = goosio::buffered_writer(file);
-// assert(goosio::write(writer, "hello") == 5);
-// assert(goosio::close(writer));
+// let writer = io::buffered_writer(file);
+// assert(io::write(writer, "hello") == 5);
+// assert(io::close(writer));
 // assert(delete_file(doc_path));
 // ```
 struct BufferedWriter { file: FileHandle, used: i64, buffer: u8[>..] }
@@ -312,12 +312,12 @@ struct BufferedWriter { file: FileHandle, used: i64, buffer: u8[>..] }
 // opened for writing. Transferring a closed handle yields a closed writer.
 //
 // ```goose
-// let file, ok = goosio::open_write(doc_path);
+// let file, ok = io::open_write(doc_path);
 // assert(ok);
-// let writer = goosio::buffered_writer(file, 3);
-// assert(goosio::close(file));
-// assert(goosio::write(writer, "abcdefg") == 7);
-// assert(goosio::close(writer));
+// let writer = io::buffered_writer(file, 3);
+// assert(io::close(file));
+// assert(io::write(writer, "abcdefg") == 7);
+// assert(io::close(writer));
 // assert(delete_file(doc_path));
 // ```
 fn buffered_writer(file: FileHandle&, capacity: i64 = 8192) -> BufferedWriter {
@@ -333,14 +333,14 @@ fn buffered_writer(file: FileHandle&, capacity: i64 = 8192) -> BufferedWriter {
 // unwritten suffix so a retry does not duplicate data. This is not fsync.
 //
 // ```goose
-// let file, ok = goosio::open_write(doc_path);
+// let file, ok = io::open_write(doc_path);
 // assert(ok);
-// let writer = goosio::buffered_writer(file);
-// assert(goosio::write(writer, "visible") == 7);
-// assert(goosio::flush(writer));
+// let writer = io::buffered_writer(file);
+// assert(io::write(writer, "visible") == 7);
+// assert(io::flush(writer));
 // var bytes: u8[>..] = [];
 // assert(read_file(doc_path, bytes) && bytes == "visible");
-// assert(goosio::close(writer));
+// assert(io::close(writer));
 // assert(delete_file(doc_path));
 // ```
 fn flush(writer: BufferedWriter&) -> bool {
@@ -366,12 +366,12 @@ fn flush(writer: BufferedWriter&) -> bool {
 // flush/close as well: a successful write can leave data buffered in memory.
 //
 // ```goose
-// let file, ok = goosio::open_write(doc_path);
+// let file, ok = io::open_write(doc_path);
 // assert(ok);
-// let writer = goosio::buffered_writer(file, 2);
-// assert(goosio::write(writer, "ab") == 2);
-// assert(goosio::write(writer, "c\n") == 2);
-// assert(goosio::close(writer));
+// let writer = io::buffered_writer(file, 2);
+// assert(io::write(writer, "ab") == 2);
+// assert(io::write(writer, "c\n") == 2);
+// assert(io::close(writer));
 // var bytes: u8[>..] = [];
 // assert(read_file(doc_path, bytes) && bytes == "abc\n");
 // assert(delete_file(doc_path));
@@ -397,12 +397,12 @@ fn write(writer: BufferedWriter&, buffer: const u8[:]) -> i64 {
 // Closing an already closed writer succeeds.
 //
 // ```goose
-// let file, ok = goosio::open_write(doc_path);
+// let file, ok = io::open_write(doc_path);
 // assert(ok);
-// let writer = goosio::buffered_writer(file);
-// assert(goosio::write(writer, "saved on close") == 14);
-// assert(goosio::close(writer));
-// assert(goosio::close(writer));
+// let writer = io::buffered_writer(file);
+// assert(io::write(writer, "saved on close") == 14);
+// assert(io::close(writer));
+// assert(io::close(writer));
 // var bytes: u8[>..] = [];
 // assert(read_file(doc_path, bytes) && bytes == "saved on close");
 // assert(delete_file(doc_path));

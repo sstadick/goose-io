@@ -23,7 +23,7 @@ def main():
     print(f"Testing {platform.system()} {platform.machine()}", flush=True)
     # All I/O fixtures and executables live outside the checkout and are
     # removed on failure too. Independent invocations cannot share files.
-    with tempfile.TemporaryDirectory(prefix="goosio-tests-") as directory:
+    with tempfile.TemporaryDirectory(prefix="goose-io-tests-") as directory:
         def run(*command):
             print("+", " ".join(map(str, command)), flush=True)
             subprocess.run(list(map(str, command)), cwd=directory, check=True, timeout=120)

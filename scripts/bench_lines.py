@@ -12,6 +12,7 @@ import json
 import os
 from pathlib import Path
 import platform
+import re
 import shutil
 import statistics
 import subprocess
@@ -21,9 +22,9 @@ ROOT = Path(__file__).resolve().parents[1]
 HARNESS = r'''
 import std;
 import os;
-import goosio from "PACKAGE";
-import goostr from "github.com/sstadick/goostr@bdf6eb74faddca0ef62092c2034589f4dd11fab1";
-import goosimd from "github.com/sstadick/goosimd@main";
+import io from "PACKAGE";
+import bstr from "github.com/sstadick/goose-bstr@216c80429b1d9df6ffbd73eaf32b70c1a8e074bf";
+import simd_bytes from "github.com/sstadick/goose-simd@e11e34447d9b0f23f2fd0f63bc25f4aee838f175";
 
 fn main() {
     let argv = args();
@@ -33,18 +34,18 @@ fn main() {
     var checksum: i64 = 0;
     let start = clock_ns();
     for _ in passes {
-        let file, opened = goosio::open_read(argv[1]);
+        let file, opened = io::open_read(argv[1]);
         assert(opened);
-        let reader = goosio::buffered_reader(file);
+        let reader = io::buffered_reader(file);
         loop {
-            let line, status = goosio::read_line(reader);
-            if status == goosio::LineStatus.Eof { break; }
-            assert(status == goosio::LineStatus.Line);
+            let line, status = io::read_line(reader);
+            if status == io::LineStatus.Eof { break; }
+            assert(status == io::LineStatus.Line);
             lines += 1;
             checksum += line.len;
             if line.len > 0 { checksum += line[0]; checksum += line[line.len - 1]; }
         }
-        assert(goosio::close(reader));
+        assert(io::close(reader));
     }
     let elapsed = clock_ns() - start;
     print(elapsed, " ", lines, " ", checksum);
@@ -80,15 +81,18 @@ def main():
         ["git", "rev-parse", args.baseline], cwd=ROOT, text=True).strip()
     report = {"baseline": revision, "platform": platform.platform(),
               "goose": subprocess.check_output([goose, "--version"], text=True).strip(),
-              "source_sha256": hashlib.sha256((ROOT / "goosio.goose").read_bytes()).hexdigest(),
+              "source_sha256": hashlib.sha256((ROOT / "io.goose").read_bytes()).hexdigest(),
               "options": vars(args) | {"output": str(args.output)}, "results": []}
     print(f"Baseline {revision}; {report['goose']}; {report['platform']}", flush=True)
-    with tempfile.TemporaryDirectory(prefix="goosio-bench-") as directory:
+    with tempfile.TemporaryDirectory(prefix="goose-io-bench-") as directory:
         work = Path(directory)
         baseline = work / "baseline"
         baseline.mkdir()
         # Extract only the package's sources, never run scripts from the revision.
-        for name in ("goosio.goose", "goosio.build", "include/goosio.h", "src/goosio.c"):
+        names = subprocess.check_output(
+            ["git", "ls-tree", "--name-only", revision], cwd=ROOT, text=True).splitlines()
+        entry = "io" if "io.goose" in names else "goosio"
+        for name in (f"{entry}.goose", f"{entry}.build", "include/goosio.h", "src/goosio.c"):
             destination = baseline / name
             destination.parent.mkdir(parents=True, exist_ok=True)
             destination.write_bytes(subprocess.check_output(
@@ -117,7 +121,21 @@ def main():
             executables = {}
             for label, package in (("before", baseline), ("after", ROOT)):
                 source = work / f"{label}.goose"
-                source.write_text(HARNESS.replace("PACKAGE", package.as_posix()))
+                harness = HARNESS.replace("PACKAGE", package.as_posix())
+                package_entry = entry if label == "before" else "io"
+                package_source = (package / f"{package_entry}.goose").read_text()
+                dependency = re.search(r'^import (?:bstr|goostr) from "[^"]+";',
+                                       package_source, re.M).group()
+                harness = re.sub(r'^import bstr from "[^"]+";',
+                                 lambda _: dependency, harness, flags=re.M)
+                if package_entry == "goosio":
+                    # Historical entries require historical namespaces, not the
+                    # migrated identifiers at revisions that lack those files.
+                    harness = harness.replace("import io ", "import goosio ").replace("io::", "goosio::")
+                    harness = re.sub(r'^import simd_bytes from "[^"]+";',
+                                     'import goosimd from "github.com/sstadick/goosimd@983f3bb2bfee95affd09f4f5530be249d7d6040b";',
+                                     harness, flags=re.M)
+                source.write_text(harness)
                 exe = work / f"{label}-{Path(cc).stem}{'.exe' if os.name == 'nt' else ''}"
                 subprocess.run([goose, "build", str(source), "--cc", cc,
                                 "--standalone", "-O2", "-o", str(exe)], check=True)
