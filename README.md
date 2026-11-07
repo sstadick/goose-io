@@ -13,6 +13,8 @@ This example creates or overwrites `hello.txt` in the current directory:
 ```goose
 import std;
 import goosio from "github.com/sstadick/goosio@main";
+import goostr from "github.com/sstadick/goostr@bdf6eb74faddca0ef62092c2034589f4dd11fab1";
+import goosimd from "github.com/sstadick/goosimd@main";
 
 fn main() {
     let output, created = goosio::open_write("hello.txt");
@@ -44,6 +46,9 @@ Use a Goose compiler with package `c_headers` support. CI pins
 the v2026.3 release is too old. No `--include` flag or separate library build
 is needed. The import follows `main`; use a full commit SHA instead for a
 reproducible dependency. The API is early and may change.
+
+Line searches use goostr, which uses goosimd. Declare both dependencies in
+the program's root file as above; Goose requires root-level package declarations.
 
 ## Borrow lines without allocating a string per line
 
@@ -136,6 +141,19 @@ python3 tests/run.py --cc msvc clang-cl   # Windows
 Set `GOOSE=/path/to/goose` to select a compiler. Tests use temporary working
 directories and cover binary and Unicode paths, truncation, EOF/errors,
 buffer boundaries, long lines, mixed byte/line reads, and flush/close.
+
+Compare working-tree line-reading throughput with an earlier Git revision:
+
+```sh
+python3 scripts/bench_lines.py --baseline HEAD --cc gcc clang
+```
+
+The benchmark uses warm-cache file reads, an 8192-byte buffer, seven alternating
+rounds, and matching optimized builds. It checks line counts and checksums on
+empty, short, long, CRLF, and binary lines. `--output results.json` saves raw
+timings; `--baseline` should name the pre-change revision after committing.
+Search setup can cost more than a scalar scan for very short nonempty lines;
+the benchmark includes one-byte payloads so that tradeoff stays visible.
 
 Edit API documentation in source comments, not `API.md`. With
 [goosdoc v0.2.0](https://github.com/sstadick/goosdoc/releases/tag/v0.2.0)

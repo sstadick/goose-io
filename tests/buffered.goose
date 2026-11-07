@@ -1,6 +1,8 @@
 import std;
 import os;
 import goosio from "..";
+import goostr from "github.com/sstadick/goostr@bdf6eb74faddca0ef62092c2034589f4dd11fab1";
+import goosimd from "github.com/sstadick/goosimd@main";
 
 const path = "buffered.tmp";
 
@@ -161,7 +163,7 @@ fn errors() {
 }
 
 fn main() {
-    for capacity in [1, 2, 3, 7, 8, 8192] {
+    for capacity in [1, 2, 3, 7, 8, 15, 16, 17, 31, 32, 33, 1023, 1024, 1025, 8192] {
         lines(capacity);
         long_lines(capacity);
         mixed_reads(capacity);

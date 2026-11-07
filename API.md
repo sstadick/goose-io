@@ -24,7 +24,7 @@
 
 ## `goosio::FileHandle`
 
-[source](goosio.goose#L23-L23)
+[source](goosio.goose#L24-L24)
 
 ```goose
 struct FileHandle { fd: i32 }
@@ -44,7 +44,7 @@ assert(goosio::close(file)); // A failed open is safe to close.
 
 ## `goosio::open_read`
 
-[source](goosio.goose#L41-L44)
+[source](goosio.goose#L42-L45)
 
 ```goose
 inline fn open_read(path: const u8[:]) -> FileHandle, bool
@@ -66,7 +66,7 @@ assert(delete_file(doc_path));
 
 ## `goosio::open_write`
 
-[source](goosio.goose#L57-L60)
+[source](goosio.goose#L58-L61)
 
 ```goose
 inline fn open_write(path: const u8[:]) -> FileHandle, bool
@@ -88,7 +88,7 @@ assert(delete_file(doc_path));
 
 ## `goosio::read`
 
-[source](goosio.goose#L77-L80)
+[source](goosio.goose#L78-L81)
 
 ```goose
 inline fn read(file: const FileHandle&, buffer: u8[:]) -> i64
@@ -114,7 +114,7 @@ assert(delete_file(doc_path));
 
 ## `goosio::write`
 
-[source](goosio.goose#L96-L99)
+[source](goosio.goose#L97-L100)
 
 ```goose
 inline fn write(file: const FileHandle&, buffer: const u8[:]) -> i64
@@ -139,7 +139,7 @@ assert(delete_file(doc_path));
 
 ## `goosio::close`
 
-[source](goosio.goose#L113-L118)
+[source](goosio.goose#L114-L119)
 
 ```goose
 inline fn close(file: FileHandle&) -> bool
@@ -162,7 +162,7 @@ assert(delete_file(doc_path));
 
 ## `goosio::BufferedReader`
 
-[source](goosio.goose#L134-L140)
+[source](goosio.goose#L135-L141)
 
 ```goose
 struct BufferedReader {
@@ -193,7 +193,7 @@ assert(delete_file(doc_path));
 
 ## `goosio::buffered_reader`
 
-[source](goosio.goose#L157-L163)
+[source](goosio.goose#L158-L164)
 
 ```goose
 fn buffered_reader(file: FileHandle&, capacity: i64 = 8192) -> BufferedReader
@@ -219,7 +219,7 @@ assert(delete_file(doc_path));
 
 ## `goosio::read`
 
-[source](goosio.goose#L182-L195)
+[source](goosio.goose#L183-L196)
 
 ```goose
 fn read(reader: BufferedReader&, buffer: u8[:]) -> i64
@@ -247,7 +247,7 @@ assert(delete_file(doc_path));
 
 ## `goosio::LineStatus`
 
-[source](goosio.goose#L213-L213)
+[source](goosio.goose#L214-L214)
 
 ```goose
 enum LineStatus { Line, Eof, Error }
@@ -274,7 +274,7 @@ assert(delete_file(doc_path));
 
 ## `goosio::read_line`
 
-[source](goosio.goose#L237-L270)
+[source](goosio.goose#L238-L276)
 
 ```goose
 fn read_line(reader: BufferedReader&) -> const u8[:], LineStatus
@@ -307,7 +307,7 @@ assert(delete_file(doc_path));
 
 ## `goosio::close`
 
-[source](goosio.goose#L284-L288)
+[source](goosio.goose#L290-L294)
 
 ```goose
 fn close(reader: BufferedReader&) -> bool
@@ -330,7 +330,7 @@ assert(status == goosio::LineStatus.Error);
 
 ## `goosio::BufferedWriter`
 
-[source](goosio.goose#L302-L302)
+[source](goosio.goose#L308-L308)
 
 ```goose
 struct BufferedWriter { file: FileHandle, used: i64, buffer: u8[>..] }
@@ -353,7 +353,7 @@ assert(delete_file(doc_path));
 
 ## `goosio::buffered_writer`
 
-[source](goosio.goose#L317-L323)
+[source](goosio.goose#L323-L329)
 
 ```goose
 fn buffered_writer(file: FileHandle&, capacity: i64 = 8192) -> BufferedWriter
@@ -377,7 +377,7 @@ assert(delete_file(doc_path));
 
 ## `goosio::flush`
 
-[source](goosio.goose#L340-L355)
+[source](goosio.goose#L346-L361)
 
 ```goose
 fn flush(writer: BufferedWriter&) -> bool
@@ -403,7 +403,7 @@ assert(delete_file(doc_path));
 
 ## `goosio::write`
 
-[source](goosio.goose#L373-L386)
+[source](goosio.goose#L379-L392)
 
 ```goose
 fn write(writer: BufferedWriter&, buffer: const u8[:]) -> i64
@@ -430,7 +430,7 @@ assert(delete_file(doc_path));
 
 ## `goosio::close`
 
-[source](goosio.goose#L404-L410)
+[source](goosio.goose#L410-L416)
 
 ```goose
 fn close(writer: BufferedWriter&) -> bool

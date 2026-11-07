@@ -1,6 +1,8 @@
 import std;
 import os;
 import goosio from "..";
+import goostr from "github.com/sstadick/goostr@bdf6eb74faddca0ef62092c2034589f4dd11fab1";
+import goosimd from "github.com/sstadick/goosimd@main";
 
 fn main() {
     let path = "goosio-café-文件.tmp";

@@ -10,6 +10,7 @@
 namespace goosio;
 
 import std;
+import goostr from "github.com/sstadick/goostr@bdf6eb74faddca0ef62092c2034589f4dd11fab1";
 
 // An owned file descriptor. Obtain it from open_read/open_write, check their
 // bool result, and close it explicitly. Do not copy a live handle or construct
@@ -236,17 +237,22 @@ enum LineStatus { Line, Eof, Error }
 // ```
 fn read_line(reader: BufferedReader&) -> const u8[:], LineStatus {
     if reader.file.fd < 0 || reader.failed { return "", LineStatus.Error; }
+    // Already-buffered empty lines need no search setup.
+    if reader.start < reader.end && reader.buffer[reader.start] == '\n' {
+        let line = reader.buffer[reader.start..reader.start];
+        reader.start += 1;
+        return line, LineStatus.Line;
+    }
     var scan = reader.start;
     loop {
-        while scan < reader.end {
-            if reader.buffer[scan] == '\n' {
-                var end = scan;
-                if end > reader.start && reader.buffer[end - 1] == '\r' { end -= 1; }
-                let line = reader.buffer[reader.start..end];
-                reader.start = scan + 1;
-                return line, LineStatus.Line;
-            }
-            scan += 1;
+        let offset = goostr::find_byte(reader.buffer[scan..reader.end], '\n');
+        if offset >= 0 {
+            let newline = scan + offset;
+            var end = newline;
+            if end > reader.start && reader.buffer[end - 1] == '\r' { end -= 1; }
+            let line = reader.buffer[reader.start..end];
+            reader.start = newline + 1;
+            return line, LineStatus.Line;
         }
         // Preserve only the unfinished line. Scan each byte once, even when
         // the line is much larger than the original buffer.
