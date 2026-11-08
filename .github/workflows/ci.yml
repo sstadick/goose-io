@@ -52,8 +52,8 @@ jobs:
         uses: actions/checkout@v7
         with:
           repository: aardappel/goose
-          # Compiler revision with package c_headers support.
-          ref: b46099024b9af8a9f54cd76e24953a89c21ccb3a
+          # Nightly compiler revision with package c_headers support.
+          ref: a12523f23e545a6af350562804a0c8b201864946
           path: .ci/goose
           persist-credentials: false
       - name: Check out goose-doc

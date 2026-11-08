@@ -42,10 +42,11 @@ goose build main.goose --cc clang -O2 -o demo
 ```
 
 Use a Goose compiler with package `c_headers` support. CI pins
-[`b460990`](https://github.com/aardappel/goose/commit/b46099024b9af8a9f54cd76e24953a89c21ccb3a);
-the v2026.3 release is too old. No `--include` flag or separate library build
-is needed. The import follows `main`; use a full commit SHA instead for a
-reproducible dependency. The API is early and may change.
+[`a12523f2`](https://github.com/aardappel/goose/commit/a12523f23e545a6af350562804a0c8b201864946)
+(`goose v2026.4-11-ga12523f2`, runtime `d521138194f1`), built Debug with
+`GOOSE_BUILTIN_LIBS` empty; the v2026.3 release is too old. No `--include` flag
+or separate library build is needed. The import follows `main`; use a full
+commit SHA instead for a reproducible dependency. The API is early and may change.
 
 Line searches use goose-bstr, which uses goose-simd. Declare both dependencies in
 the program's root file as above; Goose requires root-level package declarations.
