@@ -23,8 +23,8 @@ HARNESS = r'''
 import std;
 import os;
 import io from "PACKAGE";
-import bstr from "github.com/sstadick/goose-bstr@216c80429b1d9df6ffbd73eaf32b70c1a8e074bf";
-import simd_bytes from "github.com/sstadick/goose-simd@e11e34447d9b0f23f2fd0f63bc25f4aee838f175";
+import bstr from "github.com/sstadick/goose-bstr@v0.3.1";
+import simd_bytes from "github.com/sstadick/goose-simd@v0.2.0";
 
 fn main() {
     let argv = args();
