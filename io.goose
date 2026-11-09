@@ -10,7 +10,7 @@
 namespace io;
 
 import std;
-import bstr from "github.com/sstadick/goose-bstr@216c80429b1d9df6ffbd73eaf32b70c1a8e074bf";
+import bstr from "github.com/sstadick/goose-bstr@v0.3.1";
 
 // An owned file descriptor. Obtain it from open_read/open_write, check their
 // bool result, and close it explicitly. Do not copy a live handle or construct
