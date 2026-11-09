@@ -384,7 +384,9 @@ fn write(writer: BufferedWriter&, buffer: const u8[:]) -> i64 {
             return if accepted == 0 { -1 } else { accepted };
         }
         let count = min(buffer.len - accepted, writer.buffer.len - writer.used);
-        for i in count { writer.buffer[writer.used + i] = buffer[accepted + i]; }
+        let dst = writer.buffer[writer.used..writer.used + count];
+        let src = buffer[accepted..accepted + count];
+        for i in dst.len { dst[i] = src[i]; }
         writer.used += count;
         accepted += count;
     }

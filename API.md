@@ -403,7 +403,7 @@ assert(delete_file(doc_path));
 
 ## `io::write`
 
-[source](io.goose#L379-L392)
+[source](io.goose#L379-L394)
 
 ```goose
 fn write(writer: BufferedWriter&, buffer: const u8[:]) -> i64
@@ -430,7 +430,7 @@ assert(delete_file(doc_path));
 
 ## `io::close`
 
-[source](io.goose#L410-L416)
+[source](io.goose#L412-L418)
 
 ```goose
 fn close(writer: BufferedWriter&) -> bool
