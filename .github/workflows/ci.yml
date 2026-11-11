@@ -53,7 +53,7 @@ jobs:
         with:
           repository: aardappel/goose
           # Nightly compiler revision with package c_headers support.
-          ref: f4637bfb342fb70d42bea0474eab9e62a3c99d68
+          ref: d5ae5bbda990923fa4129f969c7f853c20d4d1e6
           path: .ci/goose
           persist-credentials: false
       - name: Check out goose-doc
