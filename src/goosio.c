@@ -64,6 +64,10 @@ int64_t goosio_write_impl(int32_t fd, goosio_slice buffer) {
 
 int32_t goosio_close_impl(int32_t fd) { return (int32_t)_close(fd); }
 
+int64_t goosio_seek_impl(int32_t fd, int64_t offset) {
+    return _lseeki64(fd, offset, 0);
+}
+
 #else
 
 #include <errno.h>
@@ -126,6 +130,13 @@ int64_t goosio_write_impl(int32_t fd, goosio_slice buffer) {
 
 int32_t goosio_close_impl(int32_t fd) { return (int32_t)close(fd); }
 
+int64_t goosio_seek_impl(int32_t fd, int64_t offset) {
+    if ((int64_t)(off_t)offset != offset) return -1;
+    off_t result;
+    do { result = lseek(fd, (off_t)offset, SEEK_SET); } while (result < 0 && errno == EINTR);
+    return (int64_t)result;
+}
+
 #endif
 
 // The package loader resolves declared extern symbols from native parts even
@@ -140,3 +151,4 @@ int64_t goosio_write(int32_t fd, goosio_slice buffer) {
     return goosio_write_impl(fd, buffer);
 }
 int32_t goosio_close(int32_t fd) { return goosio_close_impl(fd); }
+int64_t goosio_seek(int32_t fd, int64_t offset) { return goosio_seek_impl(fd, offset); }

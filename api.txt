@@ -5,6 +5,7 @@ io::open_write
 io::read
 io::write
 io::close
+io::seek
 io::BufferedReader
 io::buffered_reader
 io::LineStatus

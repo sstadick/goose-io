@@ -3,22 +3,23 @@
 # goose-io API
 
 - [`io::FileHandle`](#api-1)
-- [`io::open_read`](#api-2)
-- [`io::open_write`](#api-3)
-- [`io::read`](#api-4)
-- [`io::write`](#api-5)
-- [`io::close`](#api-6)
-- [`io::BufferedReader`](#api-7)
-- [`io::buffered_reader`](#api-8)
-- [`io::read`](#api-9)
-- [`io::LineStatus`](#api-10)
-- [`io::read_line`](#api-11)
-- [`io::close`](#api-12)
-- [`io::BufferedWriter`](#api-13)
-- [`io::buffered_writer`](#api-14)
-- [`io::flush`](#api-15)
-- [`io::write`](#api-16)
-- [`io::close`](#api-17)
+- [`io::seek`](#api-2)
+- [`io::open_read`](#api-3)
+- [`io::open_write`](#api-4)
+- [`io::read`](#api-5)
+- [`io::write`](#api-6)
+- [`io::close`](#api-7)
+- [`io::BufferedReader`](#api-8)
+- [`io::buffered_reader`](#api-9)
+- [`io::read`](#api-10)
+- [`io::LineStatus`](#api-11)
+- [`io::read_line`](#api-12)
+- [`io::close`](#api-13)
+- [`io::BufferedWriter`](#api-14)
+- [`io::buffered_writer`](#api-15)
+- [`io::flush`](#api-16)
+- [`io::write`](#api-17)
+- [`io::close`](#api-18)
 
 <a id="api-1"></a>
 
@@ -42,9 +43,34 @@ assert(io::close(file)); // A failed open is safe to close.
 
 <a id="api-2"></a>
 
+## `io::seek`
+
+[source](io.goose#L46-L49)
+
+```goose
+inline fn seek(file: const FileHandle&, offset: i64) -> i64
+```
+
+Seek an unbuffered handle to an absolute nonnegative byte offset. Returns the
+resulting offset, or -1 on error. Seeking past EOF is allowed. Do not seek a
+handle owned by a buffered reader/writer: its buffered state is not updated.
+
+```goose
+assert(write_file(doc_path, "abcdef"));
+let file, ok = io::open_read(doc_path); assert(ok);
+var bytes: u8[2] = [0; 2];
+assert(io::seek(file, 4) == 4 && io::read(file, bytes) == 2 && bytes == "ef");
+assert(io::seek(file, 1) == 1 && io::read(file, bytes) == 2 && bytes == "bc");
+assert(io::seek(file, -1) == -1);
+assert(io::close(file) && io::seek(file, 0) == -1);
+assert(delete_file(doc_path));
+```
+
+<a id="api-3"></a>
+
 ## `io::open_read`
 
-[source](io.goose#L42-L45)
+[source](io.goose#L62-L65)
 
 ```goose
 inline fn open_read(path: const u8[:]) -> FileHandle, bool
@@ -62,11 +88,11 @@ assert(io::close(file));
 assert(delete_file(doc_path));
 ```
 
-<a id="api-3"></a>
+<a id="api-4"></a>
 
 ## `io::open_write`
 
-[source](io.goose#L58-L61)
+[source](io.goose#L78-L81)
 
 ```goose
 inline fn open_write(path: const u8[:]) -> FileHandle, bool
@@ -84,11 +110,11 @@ assert(io::close(file));
 assert(delete_file(doc_path));
 ```
 
-<a id="api-4"></a>
+<a id="api-5"></a>
 
 ## `io::read`
 
-[source](io.goose#L78-L81)
+[source](io.goose#L98-L101)
 
 ```goose
 inline fn read(file: const FileHandle&, buffer: u8[:]) -> i64
@@ -110,11 +136,11 @@ assert(io::close(file));
 assert(delete_file(doc_path));
 ```
 
-<a id="api-5"></a>
+<a id="api-6"></a>
 
 ## `io::write`
 
-[source](io.goose#L97-L100)
+[source](io.goose#L117-L120)
 
 ```goose
 inline fn write(file: const FileHandle&, buffer: const u8[:]) -> i64
@@ -135,11 +161,11 @@ assert(bytes == "a\0b\r\n");
 assert(delete_file(doc_path));
 ```
 
-<a id="api-6"></a>
+<a id="api-7"></a>
 
 ## `io::close`
 
-[source](io.goose#L114-L119)
+[source](io.goose#L134-L139)
 
 ```goose
 inline fn close(file: FileHandle&) -> bool
@@ -158,11 +184,11 @@ assert(io::write(file, "x") == -1);
 assert(delete_file(doc_path));
 ```
 
-<a id="api-7"></a>
+<a id="api-8"></a>
 
 ## `io::BufferedReader`
 
-[source](io.goose#L135-L141)
+[source](io.goose#L155-L161)
 
 ```goose
 struct BufferedReader {
@@ -189,11 +215,11 @@ assert(io::close(reader));
 assert(delete_file(doc_path));
 ```
 
-<a id="api-8"></a>
+<a id="api-9"></a>
 
 ## `io::buffered_reader`
 
-[source](io.goose#L158-L164)
+[source](io.goose#L178-L184)
 
 ```goose
 fn buffered_reader(file: FileHandle&, capacity: i64 = 8192) -> BufferedReader
@@ -215,11 +241,11 @@ assert(io::close(reader));
 assert(delete_file(doc_path));
 ```
 
-<a id="api-9"></a>
+<a id="api-10"></a>
 
 ## `io::read`
 
-[source](io.goose#L183-L196)
+[source](io.goose#L203-L216)
 
 ```goose
 fn read(reader: BufferedReader&, buffer: u8[:]) -> i64
@@ -243,11 +269,11 @@ assert(io::close(reader));
 assert(delete_file(doc_path));
 ```
 
-<a id="api-10"></a>
+<a id="api-11"></a>
 
 ## `io::LineStatus`
 
-[source](io.goose#L214-L214)
+[source](io.goose#L234-L234)
 
 ```goose
 enum LineStatus { Line, Eof, Error }
@@ -270,11 +296,11 @@ assert(io::close(reader));
 assert(delete_file(doc_path));
 ```
 
-<a id="api-11"></a>
+<a id="api-12"></a>
 
 ## `io::read_line`
 
-[source](io.goose#L238-L276)
+[source](io.goose#L258-L296)
 
 ```goose
 fn read_line(reader: BufferedReader&) -> const u8[:], LineStatus
@@ -303,11 +329,11 @@ assert(io::close(reader));
 assert(delete_file(doc_path));
 ```
 
-<a id="api-12"></a>
+<a id="api-13"></a>
 
 ## `io::close`
 
-[source](io.goose#L290-L294)
+[source](io.goose#L310-L314)
 
 ```goose
 fn close(reader: BufferedReader&) -> bool
@@ -326,11 +352,11 @@ let line, status = io::read_line(reader);
 assert(status == io::LineStatus.Error);
 ```
 
-<a id="api-13"></a>
+<a id="api-14"></a>
 
 ## `io::BufferedWriter`
 
-[source](io.goose#L308-L308)
+[source](io.goose#L328-L328)
 
 ```goose
 struct BufferedWriter { file: FileHandle, used: i64, buffer: u8[>..] }
@@ -349,11 +375,11 @@ assert(io::close(writer));
 assert(delete_file(doc_path));
 ```
 
-<a id="api-14"></a>
+<a id="api-15"></a>
 
 ## `io::buffered_writer`
 
-[source](io.goose#L323-L329)
+[source](io.goose#L343-L349)
 
 ```goose
 fn buffered_writer(file: FileHandle&, capacity: i64 = 8192) -> BufferedWriter
@@ -373,11 +399,11 @@ assert(io::close(writer));
 assert(delete_file(doc_path));
 ```
 
-<a id="api-15"></a>
+<a id="api-16"></a>
 
 ## `io::flush`
 
-[source](io.goose#L346-L361)
+[source](io.goose#L366-L381)
 
 ```goose
 fn flush(writer: BufferedWriter&) -> bool
@@ -399,11 +425,11 @@ assert(io::close(writer));
 assert(delete_file(doc_path));
 ```
 
-<a id="api-16"></a>
+<a id="api-17"></a>
 
 ## `io::write`
 
-[source](io.goose#L379-L394)
+[source](io.goose#L399-L414)
 
 ```goose
 fn write(writer: BufferedWriter&, buffer: const u8[:]) -> i64
@@ -426,11 +452,11 @@ assert(read_file(doc_path, bytes) && bytes == "abc\n");
 assert(delete_file(doc_path));
 ```
 
-<a id="api-17"></a>
+<a id="api-18"></a>
 
 ## `io::close`
 
-[source](io.goose#L412-L418)
+[source](io.goose#L432-L438)
 
 ```goose
 fn close(writer: BufferedWriter&) -> bool

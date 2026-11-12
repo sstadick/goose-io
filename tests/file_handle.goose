@@ -25,8 +25,16 @@ fn main() {
     assert(io::read(input, buffer) == 12);
     assert(buffer[..12] == " from goosio");
     assert(io::read(input, buffer) == 0);
+    assert(io::seek(input, 6) == 6);
+    assert(io::read(input, buffer[..4]) == 4 && buffer[..4] == "from");
+    assert(io::seek(input, (1 << 32) + 17) == (1 << 32) + 17);
+    assert(io::read(input, buffer) == 0);
+    assert(io::seek(input, 0) == 0);
+    assert(io::read(input, buffer[..5]) == 5 && buffer[..5] == "hello");
+    assert(io::seek(input, -1) == -1);
     assert(io::close(input));
     assert(io::read(input, buffer) == -1);
+    assert(io::seek(input, 0) == -1);
 
     // Opening for writing truncates, and binary data survives unchanged.
     let truncated, writable = io::open_write(path);

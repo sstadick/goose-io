@@ -27,6 +27,26 @@ extern fn open_raw(path: const u8[:], mode: i32) -> i32 = "goosio_open";
 extern fn read_raw(fd: i32, buffer: u8[:]) -> i64 = "goosio_read";
 extern fn write_raw(fd: i32, buffer: const u8[:]) -> i64 = "goosio_write";
 extern fn close_raw(fd: i32) -> i32 = "goosio_close";
+extern fn seek_raw(fd: i32, offset: i64) -> i64 = "goosio_seek";
+
+// Seek an unbuffered handle to an absolute nonnegative byte offset. Returns the
+// resulting offset, or -1 on error. Seeking past EOF is allowed. Do not seek a
+// handle owned by a buffered reader/writer: its buffered state is not updated.
+//
+// ```goose
+// assert(write_file(doc_path, "abcdef"));
+// let file, ok = io::open_read(doc_path); assert(ok);
+// var bytes: u8[2] = [0; 2];
+// assert(io::seek(file, 4) == 4 && io::read(file, bytes) == 2 && bytes == "ef");
+// assert(io::seek(file, 1) == 1 && io::read(file, bytes) == 2 && bytes == "bc");
+// assert(io::seek(file, -1) == -1);
+// assert(io::close(file) && io::seek(file, 0) == -1);
+// assert(delete_file(doc_path));
+// ```
+inline fn seek(file: const FileHandle&, offset: i64) -> i64 {
+    if file.fd < 0 || offset < 0 { return -1; }
+    return seek_raw(file.fd, offset);
+}
 
 // Open an existing file for reading. Return a handle and success flag.
 // Empty paths and paths containing NUL fail. Paths are UTF-8 on Windows;

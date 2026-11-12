@@ -77,6 +77,10 @@ GOOSIO_INLINE int32_t goosio_close(int32_t fd) {
     return (int32_t)_close(fd);
 }
 
+GOOSIO_INLINE int64_t goosio_seek(int32_t fd, int64_t offset) {
+    return _lseeki64(fd, offset, 0);
+}
+
 #else
 
 #include <errno.h>
@@ -142,6 +146,13 @@ GOOSIO_INLINE int64_t goosio_write(int32_t fd, sl_u8 buffer) {
 
 GOOSIO_INLINE int32_t goosio_close(int32_t fd) {
     return (int32_t)close(fd);
+}
+
+GOOSIO_INLINE int64_t goosio_seek(int32_t fd, int64_t offset) {
+    if ((int64_t)(off_t)offset != offset) return -1;
+    off_t result;
+    do { result = lseek(fd, (off_t)offset, SEEK_SET); } while (result < 0 && errno == EINTR);
+    return (int64_t)result;
 }
 
 #endif
