@@ -52,8 +52,8 @@ jobs:
         uses: actions/checkout@v7
         with:
           repository: aardappel/goose
-          # Nightly compiler revision with package c_headers support.
-          ref: 855f1037a5ceee837ef270382ac8d26df47a7139
+          # Frozen compiler with transitive checkfree verification (includes 16437205).
+          ref: 4602c98660676b2cb94bc9b06fec8c65b37fce92
           path: .ci/goose
           persist-credentials: false
       - name: Check out goose-doc

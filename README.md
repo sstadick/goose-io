@@ -42,14 +42,22 @@ goose build main.goose --cc clang -O2 -o demo
 ```
 
 Use a Goose compiler with package `c_headers` support. CI pins
-[`855f1037`](https://github.com/aardappel/goose/commit/855f1037a5ceee837ef270382ac8d26df47a7139)
-(`goose v2026.4-24-g855f1037`, runtime `d521138194f1`), built Debug with
+[`4602c986`](https://github.com/aardappel/goose/commit/4602c98660676b2cb94bc9b06fec8c65b37fce92)
+(`goose v2026.4-26-g4602c986`, runtime `d521138194f1`), built Debug with
 `GOOSE_BUILTIN_LIBS` empty; the v2026.3 release is too old. No `--include` flag
 or separate library build is needed. The import follows `main`; use a full
 commit SHA instead for a reproducible dependency. The API is early and may change.
 
 Line searches use goose-bstr, which uses goose-simd. Declare both dependencies in
 the program's root file as above; Goose requires root-level package declarations.
+
+This compiler verifies code executed by a `checkfree` caller, including callees
+without that annotation. Tests exercise raw handle operations from such a caller.
+Buffered operations are not promised to be check-free: `read_line` retains bounds
+checks, and a `checkfree` caller is rejected with a diagnostic naming the call
+chain and the remaining checks. Keep those checks; `--no-bce` disables verification
+and warns, rather than proving the code check-free. Explicit assertions remain
+allowed in `checkfree` code.
 
 ## Borrow lines without allocating a string per line
 
@@ -141,7 +149,8 @@ python3 tests/run.py --cc msvc clang-cl   # Windows
 
 Set `GOOSE=/path/to/goose` to select a compiler. Tests use temporary working
 directories and cover binary and Unicode paths, truncation, EOF/errors,
-buffer boundaries, long lines, mixed byte/line reads, and flush/close.
+buffer boundaries, long lines, mixed byte/line reads, flush/close, and `checkfree`
+callers (including rejection diagnostics and the `--no-bce` warning).
 
 Compare working-tree line-reading throughput with an earlier Git revision:
 

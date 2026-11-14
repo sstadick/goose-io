@@ -29,7 +29,7 @@ def main():
             subprocess.run(list(map(str, command)), cwd=directory, check=True, timeout=120)
 
         exe = Path(directory) / ("test.exe" if os.name == "nt" else "test")
-        for suite in ("file_handle", "buffered"):
+        for suite in ("file_handle", "buffered", "checkfree"):
             source = ROOT / "tests" / f"{suite}.goose"
             for level in (0, 2):
                 run(goose, "run", source, "--debug", f"-O{level}")
@@ -38,6 +38,25 @@ def main():
                 run(exe)
                 run(goose, "build", source, "--cc", cc, "--standalone", "-O2", "-o", exe)
                 run(exe)
+
+        source = ROOT / "tests" / "checkfree_rejected.goose"
+        for level in (0, 2):
+            command = [goose, "check", str(source), "--debug", f"-O{level}",
+                       "--color", "never"]
+            print("+", " ".join(command), "(expected rejection)", flush=True)
+            result = subprocess.run(command, cwd=directory, capture_output=True,
+                                    text=True, encoding="utf-8", timeout=120)
+            diagnostic = "checkfree fn next_line calls io::read_line, which keeps a bounds check"
+            if result.returncode != 1 or diagnostic not in result.stderr:
+                raise RuntimeError(f"Expected a transitive bounds-check diagnostic:\n{result.stdout}\n{result.stderr}")
+
+        # Disabling BCE must explicitly warn that it disables this guarantee.
+        command = [goose, "run", str(source), "--debug", "--no-bce", "--color", "never"]
+        print("+", " ".join(command), "(expected warning)", flush=True)
+        result = subprocess.run(command, cwd=directory, capture_output=True,
+                                text=True, encoding="utf-8", timeout=120)
+        if result.returncode != 0 or "checkfree is not verified under --no-bce" not in result.stderr:
+            raise RuntimeError(f"Expected the checkfree bypass warning:\n{result.stdout}\n{result.stderr}")
 
 
 if __name__ == "__main__":
